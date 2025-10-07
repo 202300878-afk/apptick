@@ -1,3 +1,5 @@
+
+
 import { useMemo, useRef, useState } from 'react';
 import { Calendar, User, Phone, MapPin, Laptop, Lock, Package, AlertCircle, Wrench, Printer } from 'lucide-react';
 import { ticketService } from '../lib/ticketService';
@@ -62,20 +64,28 @@ export default function NuevoTicketForm({ onTicketCreado, onCancelar }: NuevoTic
 
   // Helpers
   const fmtFechaHora = (d: Date | string) =>
-    new Intl.DateTimeFormat('es-HN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-      .format(typeof d === 'string' ? new Date(d) : d);
+    new Intl.DateTimeFormat('es-HN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(typeof d === 'string' ? new Date(d) : d);
 
   // Número de ticket provisional (solo para impresión previa al guardado)
   const ticketProvisional = useMemo(() => {
     const now = new Date();
-    return `TMP-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}-${now.getTime().toString().slice(-6)}`;
+    return `TMP-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(
+      now.getDate()
+    ).padStart(2, '0')}-${now.getTime().toString().slice(-6)}`;
   }, []);
 
   const recibo = useMemo(() => {
     return {
-      negocio: 'Multiplanet / Taller',      // <- cámbialo por el nombre de tu negocio
-      direccionNegocio: 'Tocoa, Colón',     // <- tu dirección
-      telefonoNegocio: '+504 0000-0000',    // <- tu teléfono
+      negocio: 'Multiplanet / Taller',
+      direccionNegocio: 'Tocoa, Colón',
+      // Teléfonos actualizados:
+      telefonoNegocio: '3361-1761 / 3171-3287',
       fecha: fmtFechaHora(new Date()),
       ticket: ticketProvisional,
       cliente: formData.nombre_cliente || '-',
@@ -87,12 +97,12 @@ export default function NuevoTicketForm({ onTicketCreado, onCancelar }: NuevoTic
       prioridad: formData.prioridad,
       recibidoPor: formData.recibido_por || '-',
       fechaEstEntrega: formData.fecha_estimada_entrega ? fmtFechaHora(formData.fecha_estimada_entrega) : 'No definida',
-      accesorios: formData.accesorios_incluidos || '-',
+      accesorios: formData.accesorios_incluidos || '-', // aquí aparecerán cargador, funda, etc.
       notas: formData.contrasena_equipo ? `Clave: ${formData.contrasena_equipo}` : '-',
     };
   }, [formData, ticketProvisional]);
 
-  // Imprimir (diálogo del navegador)
+  // Imprimir (diálogo del navegador) — tamaño 58 mm y tipografía compacta
   const handleImprimir = () => {
     // Validaciones mínimas para que no salga en blanco
     if (!formData.nombre_cliente || !formData.telefono || !formData.descripcion_problema) {
@@ -103,7 +113,7 @@ export default function NuevoTicketForm({ onTicketCreado, onCancelar }: NuevoTic
     const contenido = printAreaRef.current?.innerHTML;
     if (!contenido) return;
 
-    const w = window.open('', '_blank', 'width=480,height=700');
+    const w = window.open('', '_blank', 'width=420,height=700'); // ventana más angosta
     if (!w) return;
 
     w.document.write(`<!doctype html>
@@ -112,21 +122,27 @@ export default function NuevoTicketForm({ onTicketCreado, onCancelar }: NuevoTic
   <meta charset="utf-8" />
   <title>Orden ${recibo.ticket}</title>
   <style>
-    /* Cambia 80mm -> 58mm si usas rollo de 58 mm */
-    @page { size: 80mm auto; margin: 0; }
+    /* Papel térmico pequeño (58 mm) */
+    @page { size: 58mm auto; margin: 0; }
+    /* Tipografía compacta para evitar corte de letras */
     body { margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
-    .wrap { width: 80mm; padding: 6mm 4mm; box-sizing: border-box; }
+    .wrap { width: 58mm; padding: 4mm 3mm; box-sizing: border-box; }
     .center { text-align: center; }
     .bold { font-weight: 700; }
-    .small { font-size: 12px; }
-    .line { border-top: 1px dashed #000; margin: 8px 0; }
-    .kv { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; }
-    .pre { white-space: pre-wrap; font-size: 12px; }
+    .small { font-size: 11px; line-height: 1.25; }
+    .tiny  { font-size: 10px; line-height: 1.2; }
+    .line { border-top: 1px dashed #000; margin: 6px 0; }
+    .kv { display: flex; justify-content: space-between; gap: 6px; font-size: 11px; }
+    .kv span:last-child { text-align: right; max-width: 34mm; overflow-wrap: anywhere; }
+    .pre { white-space: pre-wrap; font-size: 11px; line-height: 1.25; overflow-wrap: anywhere; }
+    /* Evita que la última línea se corte por márgenes de la impresora */
+    .bottom-space { height: 8mm; }
   </style>
 </head>
 <body>
   <div class="wrap">
     ${contenido}
+    <div class="bottom-space"></div>
   </div>
   <script>
     window.onload = () => { window.print(); setTimeout(() => window.close(), 300); };
@@ -181,7 +197,7 @@ export default function NuevoTicketForm({ onTicketCreado, onCancelar }: NuevoTic
                 onChange={handleChange}
                 required
                 className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="555-1234"
+                placeholder="3361-1761"
               />
             </div>
           </div>
@@ -295,7 +311,7 @@ export default function NuevoTicketForm({ onTicketCreado, onCancelar }: NuevoTic
                 value={formData.accesorios_incluidos}
                 onChange={handleChange}
                 className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Cargador, mouse, bolsa, etc."
+                placeholder="Cargador, funda, mouse, bolsa, etc."
               />
             </div>
           </div>
@@ -440,12 +456,12 @@ export default function NuevoTicketForm({ onTicketCreado, onCancelar }: NuevoTic
         </button>
       </div>
 
-      {/* PLANTILLA OCULTA PARA LA IMPRESIÓN */}
+      {/* PLANTILLA OCULTa PARA LA IMPRESIÓN (58 mm, compacta) */}
       <div className="hidden">
         <div ref={printAreaRef}>
-          <div className="center bold">{recibo.negocio}</div>
-          <div className="center small">{recibo.direccionNegocio}</div>
-          <div className="center small">Tel: {recibo.telefonoNegocio}</div>
+          <div className="center small bold">{recibo.negocio}</div>
+          <div className="center tiny">{recibo.direccionNegocio}</div>
+          <div className="center tiny">Tels: {recibo.telefonoNegocio}</div>
           <div className="line" />
           <div className="kv"><span>Fecha:</span><span>{recibo.fecha}</span></div>
           <div className="kv"><span>Ticket:</span><span>#{recibo.ticket}</span></div>
@@ -453,13 +469,15 @@ export default function NuevoTicketForm({ onTicketCreado, onCancelar }: NuevoTic
           <div className="kv"><span>Cliente:</span><span>{recibo.cliente}</span></div>
           <div className="kv"><span>Tel:</span><span>{recibo.telCliente}</span></div>
           <div className="line" />
-          <div className="kv"><span>Equipo:</span><span style={{ maxWidth: '46mm', textAlign: 'right' }}>{recibo.equipo}</span></div>
+          <div className="kv"><span>Equipo:</span><span>{recibo.equipo}</span></div>
           <div className="kv"><span>Serie:</span><span>{recibo.serie}</span></div>
           <div className="kv"><span>Estado:</span><span>{recibo.estado}</span></div>
           <div className="kv"><span>Prioridad:</span><span>{recibo.prioridad}</span></div>
           <div className="kv"><span>Recibido por:</span><span>{recibo.recibidoPor}</span></div>
           <div className="kv"><span>Entrega:</span><span>{recibo.fechaEstEntrega}</span></div>
-          <div className="kv"><span>Accesorios:</span><span style={{ maxWidth: '46mm', textAlign: 'right' }}>{recibo.accesorios}</span></div>
+          <div className="line" />
+          <div className="bold small">Accesorios Incluidos</div>
+          <div className="pre">{recibo.accesorios}</div>
           <div className="line" />
           <div className="bold small">Problema reportado</div>
           <div className="pre">{recibo.problema}</div>
@@ -467,7 +485,7 @@ export default function NuevoTicketForm({ onTicketCreado, onCancelar }: NuevoTic
           <div className="bold small">Notas</div>
           <div className="pre">{recibo.notas}</div>
           <div className="line" />
-          <div className="center small">¡Gracias por su preferencia!</div>
+          <div className="center tiny">¡Gracias por su preferencia!</div>
         </div>
       </div>
     </form>
