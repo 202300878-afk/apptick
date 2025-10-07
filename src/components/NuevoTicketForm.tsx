@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Calendar, User, Phone, MapPin, Laptop, Lock, Package, AlertCircle, Wrench } from 'lucide-react';
+import { useMemo, useRef, useState } from 'react';
+import { Calendar, User, Phone, MapPin, Laptop, Lock, Package, AlertCircle, Wrench, Printer } from 'lucide-react';
 import { ticketService } from '../lib/ticketService';
 import type { TicketInsert } from '../lib/database.types';
 
@@ -29,6 +29,9 @@ export default function NuevoTicketForm({ onTicketCreado, onCancelar }: NuevoTic
     fecha_estimada_entrega: '',
   });
 
+  // Ref a la plantilla que imprimimos
+  const printAreaRef = useRef<HTMLDivElement | null>(null);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({
       ...formData,
@@ -57,6 +60,82 @@ export default function NuevoTicketForm({ onTicketCreado, onCancelar }: NuevoTic
     }
   };
 
+  // Helpers
+  const fmtFechaHora = (d: Date | string) =>
+    new Intl.DateTimeFormat('es-HN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+      .format(typeof d === 'string' ? new Date(d) : d);
+
+  // Número de ticket provisional (solo para impresión previa al guardado)
+  const ticketProvisional = useMemo(() => {
+    const now = new Date();
+    return `TMP-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}-${now.getTime().toString().slice(-6)}`;
+  }, []);
+
+  const recibo = useMemo(() => {
+    return {
+      negocio: 'Multiplanet / Taller',      // <- cámbialo por el nombre de tu negocio
+      direccionNegocio: 'Tocoa, Colón',     // <- tu dirección
+      telefonoNegocio: '+504 0000-0000',    // <- tu teléfono
+      fecha: fmtFechaHora(new Date()),
+      ticket: ticketProvisional,
+      cliente: formData.nombre_cliente || '-',
+      telCliente: formData.telefono || '-',
+      equipo: `${formData.tipo_equipo} ${formData.marca}${formData.modelo ? ' ' + formData.modelo : ''}`.trim(),
+      serie: formData.numero_serie || '-',
+      estado: formData.estado_inicial || 'Recibido',
+      problema: formData.descripcion_problema || '-',
+      prioridad: formData.prioridad,
+      recibidoPor: formData.recibido_por || '-',
+      fechaEstEntrega: formData.fecha_estimada_entrega ? fmtFechaHora(formData.fecha_estimada_entrega) : 'No definida',
+      accesorios: formData.accesorios_incluidos || '-',
+      notas: formData.contrasena_equipo ? `Clave: ${formData.contrasena_equipo}` : '-',
+    };
+  }, [formData, ticketProvisional]);
+
+  // Imprimir (diálogo del navegador)
+  const handleImprimir = () => {
+    // Validaciones mínimas para que no salga en blanco
+    if (!formData.nombre_cliente || !formData.telefono || !formData.descripcion_problema) {
+      alert('Completa al menos: Nombre, Teléfono y Descripción del problema para imprimir.');
+      return;
+    }
+
+    const contenido = printAreaRef.current?.innerHTML;
+    if (!contenido) return;
+
+    const w = window.open('', '_blank', 'width=480,height=700');
+    if (!w) return;
+
+    w.document.write(`<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Orden ${recibo.ticket}</title>
+  <style>
+    /* Cambia 80mm -> 58mm si usas rollo de 58 mm */
+    @page { size: 80mm auto; margin: 0; }
+    body { margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+    .wrap { width: 80mm; padding: 6mm 4mm; box-sizing: border-box; }
+    .center { text-align: center; }
+    .bold { font-weight: 700; }
+    .small { font-size: 12px; }
+    .line { border-top: 1px dashed #000; margin: 8px 0; }
+    .kv { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; }
+    .pre { white-space: pre-wrap; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    ${contenido}
+  </div>
+  <script>
+    window.onload = () => { window.print(); setTimeout(() => window.close(), 300); };
+  </script>
+</body>
+</html>`);
+    w.document.close();
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
@@ -66,6 +145,7 @@ export default function NuevoTicketForm({ onTicketCreado, onCancelar }: NuevoTic
         </div>
       )}
 
+      {/* Información del Cliente */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
         <div className="flex items-center gap-2 mb-4">
           <User className="w-5 h-5 text-blue-600" />
@@ -107,9 +187,7 @@ export default function NuevoTicketForm({ onTicketCreado, onCancelar }: NuevoTic
           </div>
 
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Dirección
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Dirección</label>
             <div className="relative">
               <MapPin className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
               <input
@@ -125,6 +203,7 @@ export default function NuevoTicketForm({ onTicketCreado, onCancelar }: NuevoTic
         </div>
       </div>
 
+      {/* Información del Equipo */}
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
         <div className="flex items-center gap-2 mb-4">
           <Laptop className="w-5 h-5 text-gray-600" />
@@ -168,9 +247,7 @@ export default function NuevoTicketForm({ onTicketCreado, onCancelar }: NuevoTic
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Modelo
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Modelo</label>
             <input
               type="text"
               name="modelo"
@@ -182,9 +259,7 @@ export default function NuevoTicketForm({ onTicketCreado, onCancelar }: NuevoTic
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Número de Serie
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Número de Serie</label>
             <input
               type="text"
               name="numero_serie"
@@ -196,9 +271,7 @@ export default function NuevoTicketForm({ onTicketCreado, onCancelar }: NuevoTic
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Contraseña del Equipo
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña del Equipo</label>
             <div className="relative">
               <Lock className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
               <input
@@ -213,9 +286,7 @@ export default function NuevoTicketForm({ onTicketCreado, onCancelar }: NuevoTic
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Accesorios Incluidos
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Accesorios Incluidos</label>
             <div className="relative">
               <Package className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
               <input
@@ -231,6 +302,7 @@ export default function NuevoTicketForm({ onTicketCreado, onCancelar }: NuevoTic
         </div>
       </div>
 
+      {/* Problema Reportado */}
       <div className="bg-amber-50 border border-amber-200 rounded-lg p-6">
         <div className="flex items-center gap-2 mb-4">
           <AlertCircle className="w-5 h-5 text-amber-600" />
@@ -291,6 +363,7 @@ export default function NuevoTicketForm({ onTicketCreado, onCancelar }: NuevoTic
         </div>
       </div>
 
+      {/* Información de Gestión */}
       <div className="bg-green-50 border border-green-200 rounded-lg p-6">
         <div className="flex items-center gap-2 mb-4">
           <Wrench className="w-5 h-5 text-green-600" />
@@ -314,9 +387,7 @@ export default function NuevoTicketForm({ onTicketCreado, onCancelar }: NuevoTic
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Fecha Estimada de Entrega
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Estimada de Entrega</label>
             <div className="relative">
               <Calendar className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
               <input
@@ -331,6 +402,7 @@ export default function NuevoTicketForm({ onTicketCreado, onCancelar }: NuevoTic
         </div>
       </div>
 
+      {/* Acción: Cancelar / Imprimir / Guardar */}
       <div className="flex gap-3 justify-end pt-4 border-t">
         <button
           type="button"
@@ -340,6 +412,18 @@ export default function NuevoTicketForm({ onTicketCreado, onCancelar }: NuevoTic
         >
           Cancelar
         </button>
+
+        <button
+          type="button"
+          onClick={handleImprimir}
+          disabled={loading}
+          className="px-6 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+          title="Imprimir orden (elige tu impresora en el diálogo del navegador)"
+        >
+          <Printer className="w-4 h-4" />
+          Imprimir
+        </button>
+
         <button
           type="submit"
           disabled={loading}
@@ -354,6 +438,37 @@ export default function NuevoTicketForm({ onTicketCreado, onCancelar }: NuevoTic
             'Guardar Ticket'
           )}
         </button>
+      </div>
+
+      {/* PLANTILLA OCULTA PARA LA IMPRESIÓN */}
+      <div className="hidden">
+        <div ref={printAreaRef}>
+          <div className="center bold">{recibo.negocio}</div>
+          <div className="center small">{recibo.direccionNegocio}</div>
+          <div className="center small">Tel: {recibo.telefonoNegocio}</div>
+          <div className="line" />
+          <div className="kv"><span>Fecha:</span><span>{recibo.fecha}</span></div>
+          <div className="kv"><span>Ticket:</span><span>#{recibo.ticket}</span></div>
+          <div className="line" />
+          <div className="kv"><span>Cliente:</span><span>{recibo.cliente}</span></div>
+          <div className="kv"><span>Tel:</span><span>{recibo.telCliente}</span></div>
+          <div className="line" />
+          <div className="kv"><span>Equipo:</span><span style={{ maxWidth: '46mm', textAlign: 'right' }}>{recibo.equipo}</span></div>
+          <div className="kv"><span>Serie:</span><span>{recibo.serie}</span></div>
+          <div className="kv"><span>Estado:</span><span>{recibo.estado}</span></div>
+          <div className="kv"><span>Prioridad:</span><span>{recibo.prioridad}</span></div>
+          <div className="kv"><span>Recibido por:</span><span>{recibo.recibidoPor}</span></div>
+          <div className="kv"><span>Entrega:</span><span>{recibo.fechaEstEntrega}</span></div>
+          <div className="kv"><span>Accesorios:</span><span style={{ maxWidth: '46mm', textAlign: 'right' }}>{recibo.accesorios}</span></div>
+          <div className="line" />
+          <div className="bold small">Problema reportado</div>
+          <div className="pre">{recibo.problema}</div>
+          <div className="line" />
+          <div className="bold small">Notas</div>
+          <div className="pre">{recibo.notas}</div>
+          <div className="line" />
+          <div className="center small">¡Gracias por su preferencia!</div>
+        </div>
       </div>
     </form>
   );
