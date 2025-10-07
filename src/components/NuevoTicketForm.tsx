@@ -1,5 +1,16 @@
 import { useMemo, useRef, useState } from 'react';
-import { Calendar, User, Phone, MapPin, Laptop, Lock, Package, AlertCircle, Wrench, Printer } from 'lucide-react';
+import {
+  Calendar,
+  User,
+  Phone,
+  MapPin,
+  Laptop,
+  Lock,
+  Package,
+  AlertCircle,
+  Wrench,
+  Printer,
+} from 'lucide-react';
 import { ticketService } from '../lib/ticketService';
 import type { TicketInsert } from '../lib/database.types';
 
@@ -32,7 +43,9 @@ export default function NuevoTicketForm({ onTicketCreado, onCancelar }: NuevoTic
   // Ref a la plantilla que imprimimos
   const printAreaRef = useRef<HTMLDivElement | null>(null);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
@@ -78,27 +91,38 @@ export default function NuevoTicketForm({ onTicketCreado, onCancelar }: NuevoTic
     ).padStart(2, '0')}-${now.getTime().toString().slice(-6)}`;
   }, []);
 
+  // Separar accesorios por coma y listarlos
+  const accesoriosList = useMemo(() => {
+    return (formData.accesorios_incluidos || '')
+      .split(',')
+      .map((a) => a.trim())
+      .filter(Boolean);
+  }, [formData.accesorios_incluidos]);
+
   const recibo = useMemo(() => {
     return {
       negocio: 'Multiplanet / Taller',
       direccionNegocio: 'Tocoa, Colón',
-      // Teléfonos actualizados:
-      telefonoNegocio: '3361-1761 / 3171-3287',
+      telefonoNegocio: '3361-1761 / 3171-3287', // 👈 Teléfonos visibles
       fecha: fmtFechaHora(new Date()),
       ticket: ticketProvisional,
       cliente: formData.nombre_cliente || '-',
       telCliente: formData.telefono || '-',
-      equipo: `${formData.tipo_equipo} ${formData.marca}${formData.modelo ? ' ' + formData.modelo : ''}`.trim(),
+      equipo: `${formData.tipo_equipo} ${formData.marca}${
+        formData.modelo ? ' ' + formData.modelo : ''
+      }`.trim(),
       serie: formData.numero_serie || '-',
       estado: formData.estado_inicial || 'Recibido',
       problema: formData.descripcion_problema || '-',
       prioridad: formData.prioridad,
       recibidoPor: formData.recibido_por || '-',
-      fechaEstEntrega: formData.fecha_estimada_entrega ? fmtFechaHora(formData.fecha_estimada_entrega) : 'No definida',
-      accesorios: formData.accesorios_incluidos || '-', // aquí aparecerán cargador, funda, etc.
+      fechaEstEntrega: formData.fecha_estimada_entrega
+        ? fmtFechaHora(formData.fecha_estimada_entrega)
+        : 'No definida',
+      accesorios: accesoriosList,
       notas: formData.contrasena_equipo ? `Clave: ${formData.contrasena_equipo}` : '-',
     };
-  }, [formData, ticketProvisional]);
+  }, [formData, ticketProvisional, accesoriosList]);
 
   // Imprimir (diálogo del navegador) — tamaño 58 mm y tipografía compacta
   const handleImprimir = () => {
@@ -123,16 +147,16 @@ export default function NuevoTicketForm({ onTicketCreado, onCancelar }: NuevoTic
     /* Papel térmico pequeño (58 mm) */
     @page { size: 58mm auto; margin: 0; }
     /* Tipografía compacta para evitar corte de letras */
-    body { margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
-    .wrap { width: 58mm; padding: 4mm 3mm; box-sizing: border-box; }
+    body { margin: 0; font-family: monospace; }
+    .wrap { width: 54mm; padding: 3mm; box-sizing: border-box; }
     .center { text-align: center; }
-    .bold { font-weight: 700; }
-    .small { font-size: 11px; line-height: 1.25; }
+    .bold { font-weight: bold; }
+    .small { font-size: 11px; line-height: 1.3; }
     .tiny  { font-size: 10px; line-height: 1.2; }
     .line { border-top: 1px dashed #000; margin: 6px 0; }
-    .kv { display: flex; justify-content: space-between; gap: 6px; font-size: 11px; }
+    .kv { display: flex; justify-content: space-between; font-size: 11px; gap: 6px; }
     .kv span:last-child { text-align: right; max-width: 34mm; overflow-wrap: anywhere; }
-    .pre { white-space: pre-wrap; font-size: 11px; line-height: 1.25; overflow-wrap: anywhere; }
+    .pre { white-space: pre-wrap; font-size: 11px; line-height: 1.3; overflow-wrap: anywhere; }
     /* Evita que la última línea se corte por márgenes de la impresora */
     .bottom-space { height: 8mm; }
   </style>
@@ -142,9 +166,7 @@ export default function NuevoTicketForm({ onTicketCreado, onCancelar }: NuevoTic
     ${contenido}
     <div class="bottom-space"></div>
   </div>
-  <script>
-    window.onload = () => { window.print(); setTimeout(() => window.close(), 300); };
-  </script>
+  <script>window.onload = () => { window.print(); setTimeout(() => window.close(), 300); };</script>
 </body>
 </html>`);
     w.document.close();
@@ -285,7 +307,7 @@ export default function NuevoTicketForm({ onTicketCreado, onCancelar }: NuevoTic
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña del Equipo</label>
+            <label className="block text sm font-medium text-gray-700 mb-1">Contraseña del Equipo</label>
             <div className="relative">
               <Lock className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
               <input
@@ -309,7 +331,7 @@ export default function NuevoTicketForm({ onTicketCreado, onCancelar }: NuevoTic
                 value={formData.accesorios_incluidos}
                 onChange={handleChange}
                 className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Cargador, funda, mouse, bolsa, etc."
+                placeholder="Cargador, funda, mouse, bolsa, etc. (separa por comas)"
               />
             </div>
           </div>
@@ -401,7 +423,9 @@ export default function NuevoTicketForm({ onTicketCreado, onCancelar }: NuevoTic
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Estimada de Entrega</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Fecha Estimada de Entrega
+            </label>
             <div className="relative">
               <Calendar className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
               <input
@@ -454,7 +478,7 @@ export default function NuevoTicketForm({ onTicketCreado, onCancelar }: NuevoTic
         </button>
       </div>
 
-      {/* PLANTILLA OCULTa PARA LA IMPRESIÓN (58 mm, compacta) */}
+      {/* PLANTILLA OCULTA PARA LA IMPRESIÓN (58 mm, compacta) */}
       <div className="hidden">
         <div ref={printAreaRef}>
           <div className="center small bold">{recibo.negocio}</div>
@@ -462,7 +486,7 @@ export default function NuevoTicketForm({ onTicketCreado, onCancelar }: NuevoTic
           <div className="center tiny">Tels: {recibo.telefonoNegocio}</div>
           <div className="line" />
           <div className="kv"><span>Fecha:</span><span>{recibo.fecha}</span></div>
-          <div className="kv"><span>Ticket:</span><span>#{recibo.ticket}</span></div>
+          <div className="kv"><span>Ticket:</span><span>{recibo.ticket}</span></div>
           <div className="line" />
           <div className="kv"><span>Cliente:</span><span>{recibo.cliente}</span></div>
           <div className="kv"><span>Tel:</span><span>{recibo.telCliente}</span></div>
@@ -474,10 +498,18 @@ export default function NuevoTicketForm({ onTicketCreado, onCancelar }: NuevoTic
           <div className="kv"><span>Recibido por:</span><span>{recibo.recibidoPor}</span></div>
           <div className="kv"><span>Entrega:</span><span>{recibo.fechaEstEntrega}</span></div>
           <div className="line" />
-          <div className="bold small">Accesorios Incluidos</div>
-          <div className="pre">{recibo.accesorios}</div>
+          <div className="bold small">Accesorios</div>
+          {recibo.accesorios.length ? (
+            <ul className="small">
+              {recibo.accesorios.map((a, i) => (
+                <li key={i}>- {a}</li>
+              ))}
+            </ul>
+          ) : (
+            <div className="small">-</div>
+          )}
           <div className="line" />
-          <div className="bold small">Problema reportado</div>
+          <div className="bold small">Problema</div>
           <div className="pre">{recibo.problema}</div>
           <div className="line" />
           <div className="bold small">Notas</div>
