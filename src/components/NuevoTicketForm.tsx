@@ -1,5 +1,3 @@
-
-
 import { useMemo, useRef, useState } from 'react';
 import { Calendar, User, Phone, MapPin, Laptop, Lock, Package, AlertCircle, Wrench, Printer } from 'lucide-react';
 import { ticketService } from '../lib/ticketService';
