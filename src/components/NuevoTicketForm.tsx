@@ -100,18 +100,28 @@ export default function NuevoTicketForm({ onTicketCreado, onCancelar }: NuevoTic
   }, [formData.accesorios_incluidos]);
 
   const recibo = useMemo(() => {
+    const fechaActual = new Date();
     return {
-      negocio: 'Multiplanet / Taller',
-      direccionNegocio: 'Tocoa, Colón',
-      telefonoNegocio: '3361-1761 / 3171-3287', // 👈 Teléfonos visibles
-      fecha: fmtFechaHora(new Date()),
+      negocio: 'MULTIPLANET',
+      direccion: 'Bº El Centro, Contiguo A Edificio Makalo,',
+      ciudad: 'Tocoa, Colón',
+      telefono1: '3171-3287',
+      telefono2: '9647-3966',
+      email: 'multiplanettocoa@yahoo.com',
+      fecha: fmtFechaHora(fechaActual),
+      dia: fechaActual.getDate(),
+      mes: fechaActual.getMonth() + 1,
+      anio: fechaActual.getFullYear().toString().slice(-2),
       ticket: ticketProvisional,
       cliente: formData.nombre_cliente || '-',
+      direccionCliente: formData.direccion || '',
       telCliente: formData.telefono || '-',
-      equipo: `${formData.tipo_equipo} ${formData.marca}${
-        formData.modelo ? ' ' + formData.modelo : ''
-      }`.trim(),
-      serie: formData.numero_serie || '-',
+      tipoEquipo: formData.tipo_equipo,
+      marca: formData.marca || '',
+      modelo: formData.modelo || '',
+      serie: formData.numero_serie || '',
+      contrasena: formData.contrasena_equipo || '',
+      accesorios: formData.accesorios_incluidos || '',
       estado: formData.estado_inicial || 'Recibido',
       problema: formData.descripcion_problema || '-',
       prioridad: formData.prioridad,
@@ -119,12 +129,12 @@ export default function NuevoTicketForm({ onTicketCreado, onCancelar }: NuevoTic
       fechaEstEntrega: formData.fecha_estimada_entrega
         ? fmtFechaHora(formData.fecha_estimada_entrega)
         : 'No definida',
-      accesorios: accesoriosList,
-      notas: formData.contrasena_equipo ? `Clave: ${formData.contrasena_equipo}` : '-',
+      trabajos: '',
+      observaciones: formData.contrasena_equipo ? `Clave: ${formData.contrasena_equipo}` : '',
     };
-  }, [formData, ticketProvisional, accesoriosList]);
+  }, [formData, ticketProvisional]);
 
-  // Imprimir (diálogo del navegador) — tamaño 58 mm y tipografía compacta
+  // Imprimir (diálogo del navegador) — formato profesional A5
   const handleImprimir = () => {
     // Validaciones mínimas para que no salga en blanco
     if (!formData.nombre_cliente || !formData.telefono || !formData.descripcion_problema) {
@@ -135,7 +145,7 @@ export default function NuevoTicketForm({ onTicketCreado, onCancelar }: NuevoTic
     const contenido = printAreaRef.current?.innerHTML;
     if (!contenido) return;
 
-    const w = window.open('', '_blank', 'width=420,height=700'); // ventana más angosta
+    const w = window.open('', '_blank', 'width=650,height=900');
     if (!w) return;
 
     w.document.write(`<!doctype html>
@@ -144,29 +154,194 @@ export default function NuevoTicketForm({ onTicketCreado, onCancelar }: NuevoTic
   <meta charset="utf-8" />
   <title>Orden ${recibo.ticket}</title>
   <style>
-    /* Papel térmico pequeño (58 mm) */
-    @page { size: 58mm auto; margin: 0; }
-    /* Tipografía compacta para evitar corte de letras */
-    body { margin: 0; font-family: monospace; }
-    .wrap { width: 54mm; padding: 3mm; box-sizing: border-box; }
-    .center { text-align: center; }
-    .bold { font-weight: bold; }
-    .small { font-size: 11px; line-height: 1.3; }
-    .tiny  { font-size: 10px; line-height: 1.2; }
-    .line { border-top: 1px dashed #000; margin: 6px 0; }
-    .kv { display: flex; justify-content: space-between; font-size: 11px; gap: 6px; }
-    .kv span:last-child { text-align: right; max-width: 34mm; overflow-wrap: anywhere; }
-    .pre { white-space: pre-wrap; font-size: 11px; line-height: 1.3; overflow-wrap: anywhere; }
-    /* Evita que la última línea se corte por márgenes de la impresora */
-    .bottom-space { height: 8mm; }
+    @page { size: A5 portrait; margin: 0; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      font-size: 11px;
+      line-height: 1.3;
+    }
+    .ticket {
+      width: 148mm;
+      height: 210mm;
+      padding: 8mm;
+      border: 2px solid #000;
+      position: relative;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border: 2px solid #000;
+      padding: 6px 8px;
+      margin-bottom: 4px;
+    }
+    .logo-section {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+    }
+    .logo {
+      width: 45px;
+      height: 45px;
+    }
+    .company-info {
+      flex: 1;
+      font-size: 9px;
+      line-height: 1.2;
+    }
+    .company-name {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 2px;
+    }
+    .date-box {
+      border: 1.5px solid #000;
+      padding: 4px 6px;
+      text-align: center;
+      min-width: 85px;
+    }
+    .date-label {
+      font-size: 8px;
+      font-weight: bold;
+      margin-bottom: 2px;
+    }
+    .date-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 3px;
+      margin-top: 3px;
+    }
+    .date-cell {
+      border: 1px solid #000;
+      text-align: center;
+      padding: 2px;
+      font-size: 7px;
+    }
+    .date-cell-value {
+      font-size: 11px;
+      font-weight: bold;
+      margin-top: 1px;
+    }
+    .section-title {
+      font-size: 10px;
+      font-weight: bold;
+      text-decoration: underline;
+      margin: 4px 0 3px 0;
+    }
+    .ticket-number {
+      text-align: center;
+      margin: 3px 0;
+    }
+    .ticket-label {
+      font-size: 10px;
+      font-weight: bold;
+    }
+    .ticket-value {
+      font-size: 24px;
+      color: #d00;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+    .field {
+      display: flex;
+      align-items: center;
+      margin: 2px 0;
+      min-height: 16px;
+    }
+    .field-label {
+      font-weight: bold;
+      margin-right: 4px;
+      white-space: nowrap;
+    }
+    .field-value {
+      flex: 1;
+      border-bottom: 1px solid #000;
+      padding-left: 4px;
+      min-height: 14px;
+    }
+    .field-inline {
+      display: inline-flex;
+      align-items: center;
+      margin-right: 12px;
+      flex: 1;
+    }
+    .checkbox-group {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2px 8px;
+      margin: 3px 0;
+    }
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .checkbox {
+      width: 12px;
+      height: 12px;
+      border: 1.5px solid #000;
+      display: inline-block;
+      position: relative;
+    }
+    .checkbox.checked::after {
+      content: '✓';
+      position: absolute;
+      top: -3px;
+      left: 1px;
+      font-size: 14px;
+      font-weight: bold;
+    }
+    .text-area {
+      border: 1.5px solid #000;
+      padding: 4px;
+      min-height: 35px;
+      margin: 2px 0;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .footer {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .footer-box {
+      border: 1.5px solid #000;
+      padding: 4px;
+      min-height: 30px;
+    }
+    .footer-label {
+      font-size: 9px;
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 2px;
+    }
+    .footer-value {
+      text-align: center;
+      font-size: 11px;
+      font-weight: bold;
+      margin-top: 6px;
+    }
+    .disclaimer {
+      font-size: 7px;
+      text-align: center;
+      margin-top: 4px;
+      line-height: 1.2;
+    }
+    .row {
+      display: flex;
+      gap: 8px;
+    }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    ${contenido}
-    <div class="bottom-space"></div>
-  </div>
-  <script>window.onload = () => { window.print(); setTimeout(() => window.close(), 300); };</script>
+  ${contenido}
+  <script>
+    window.onload = () => { window.print(); setTimeout(() => window.close(), 300); };
+  </script>
 </body>
 </html>`);
     w.document.close();
@@ -478,44 +653,157 @@ export default function NuevoTicketForm({ onTicketCreado, onCancelar }: NuevoTic
         </button>
       </div>
 
-      {/* PLANTILLA OCULTA PARA LA IMPRESIÓN (58 mm, compacta) */}
+      {/* PLANTILLA OCULTA PARA LA IMPRESIÓN (formato profesional) */}
       <div className="hidden">
         <div ref={printAreaRef}>
-          <div className="center small bold">{recibo.negocio}</div>
-          <div className="center tiny">{recibo.direccionNegocio}</div>
-          <div className="center tiny">Tels: {recibo.telefonoNegocio}</div>
-          <div className="line" />
-          <div className="kv"><span>Fecha:</span><span>{recibo.fecha}</span></div>
-          <div className="kv"><span>Ticket:</span><span>{recibo.ticket}</span></div>
-          <div className="line" />
-          <div className="kv"><span>Cliente:</span><span>{recibo.cliente}</span></div>
-          <div className="kv"><span>Tel:</span><span>{recibo.telCliente}</span></div>
-          <div className="line" />
-          <div className="kv"><span>Equipo:</span><span>{recibo.equipo}</span></div>
-          <div className="kv"><span>Serie:</span><span>{recibo.serie}</span></div>
-          <div className="kv"><span>Estado:</span><span>{recibo.estado}</span></div>
-          <div className="kv"><span>Prioridad:</span><span>{recibo.prioridad}</span></div>
-          <div className="kv"><span>Recibido por:</span><span>{recibo.recibidoPor}</span></div>
-          <div className="kv"><span>Entrega:</span><span>{recibo.fechaEstEntrega}</span></div>
-          <div className="line" />
-          <div className="bold small">Accesorios</div>
-          {recibo.accesorios.length ? (
-            <ul className="small">
-              {recibo.accesorios.map((a, i) => (
-                <li key={i}>- {a}</li>
-              ))}
-            </ul>
-          ) : (
-            <div className="small">-</div>
-          )}
-          <div className="line" />
-          <div className="bold small">Problema</div>
-          <div className="pre">{recibo.problema}</div>
-          <div className="line" />
-          <div className="bold small">Notas</div>
-          <div className="pre">{recibo.notas}</div>
-          <div className="line" />
-          <div className="center tiny">¡Gracias por su preferencia!</div>
+          <div className="ticket">
+            {/* Encabezado con logo y fecha */}
+            <div className="header">
+              <div className="logo-section">
+                <img src="/LOGO MULTIPLANET 2022.png" alt="Logo" className="logo" />
+                <div className="company-info">
+                  <div className="company-name">{recibo.negocio}</div>
+                  <div>{recibo.direccion}</div>
+                  <div>{recibo.ciudad}</div>
+                  <div>Cel.: {recibo.telefono1} * {recibo.telefono2}</div>
+                  <div>E-mail: {recibo.email}</div>
+                </div>
+              </div>
+              <div className="date-box">
+                <div className="date-label">FECHA DE RECIBO</div>
+                <div className="date-grid">
+                  <div className="date-cell">
+                    <div>DÍA</div>
+                    <div className="date-cell-value">{recibo.dia}</div>
+                  </div>
+                  <div className="date-cell">
+                    <div>MES</div>
+                    <div className="date-cell-value">{recibo.mes}</div>
+                  </div>
+                  <div className="date-cell">
+                    <div>AÑO</div>
+                    <div className="date-cell-value">{recibo.anio}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Número de orden */}
+            <div className="section-title">Ofrecemos: ORDEN DE TRABAJO</div>
+            <div className="ticket-number">
+              <span className="ticket-label">Nº </span>
+              <span className="ticket-value">{recibo.ticket}</span>
+            </div>
+
+            {/* Información del cliente */}
+            <div className="field">
+              <span className="field-label">Cliente:</span>
+              <div className="field-value">{recibo.cliente}</div>
+            </div>
+            <div className="field">
+              <span className="field-label">Dirección:</span>
+              <div className="field-value">{recibo.direccionCliente}</div>
+            </div>
+            <div className="field">
+              <span className="field-label">Celular:</span>
+              <div className="field-value">{recibo.telCliente}</div>
+            </div>
+
+            {/* Tipo de equipo */}
+            <div className="row" style="margin: 3px 0;">
+              <div className="field-inline">
+                <span className="field-label">Computadora</span>
+                <span className="checkbox ${recibo.tipoEquipo.includes('Computadora') || recibo.tipoEquipo.includes('PC') || recibo.tipoEquipo.includes('Laptop') ? 'checked' : ''}"></span>
+              </div>
+              <div className="field-inline">
+                <span className="field-label">Impresora</span>
+                <span className="checkbox ${recibo.tipoEquipo.includes('Impresora') ? 'checked' : ''}"></span>
+              </div>
+              <div className="field-inline">
+                <span className="field-label">Otro</span>
+                <span className="checkbox ${!recibo.tipoEquipo.includes('Computadora') && !recibo.tipoEquipo.includes('PC') && !recibo.tipoEquipo.includes('Laptop') && !recibo.tipoEquipo.includes('Impresora') ? 'checked' : ''}"></span>
+              </div>
+            </div>
+
+            {/* Marca y Modelo */}
+            <div className="row">
+              <div className="field" style="flex: 1;">
+                <span className="field-label">Marca:</span>
+                <div className="field-value">{recibo.marca}</div>
+              </div>
+              <div className="field" style="flex: 1;">
+                <span className="field-label">Modelo:</span>
+                <div className="field-value">{recibo.modelo}</div>
+              </div>
+            </div>
+
+            {/* Accesorios */}
+            <div className="checkbox-group">
+              <div className="checkbox-item">
+                <span className="checkbox ${recibo.accesorios.toLowerCase().includes('cargador') ? 'checked' : ''}"></span>
+                <span>Cargador</span>
+              </div>
+              <div className="checkbox-item">
+                <span className="checkbox ${recibo.accesorios.toLowerCase().includes('cable usb') ? 'checked' : ''}"></span>
+                <span>Cable USB</span>
+              </div>
+              <div className="checkbox-item">
+                <span className="checkbox ${recibo.accesorios.toLowerCase().includes('cable energia') || recibo.accesorios.toLowerCase().includes('cable energía') ? 'checked' : ''}"></span>
+                <span>Cable Energía</span>
+              </div>
+              <div className="checkbox-item">
+                <span className="checkbox ${recibo.accesorios.toLowerCase().includes('maletin') || recibo.accesorios.toLowerCase().includes('maletín') || recibo.accesorios.toLowerCase().includes('bolsa') ? 'checked' : ''}"></span>
+                <span>Maletín</span>
+              </div>
+              <div className="checkbox-item">
+                <span className="checkbox ${recibo.accesorios.toLowerCase().includes('monitor') ? 'checked' : ''}"></span>
+                <span>Monitor</span>
+              </div>
+              <div className="checkbox-item">
+                <span className="checkbox ${recibo.accesorios.toLowerCase().includes('cpu') ? 'checked' : ''}"></span>
+                <span>CPU</span>
+              </div>
+            </div>
+
+            {/* Otro */}
+            <div className="field">
+              <span className="field-label">Otro:</span>
+              <div className="field-value">{recibo.accesorios}</div>
+            </div>
+
+            {/* Trabajos a Realizar */}
+            <div className="field">
+              <span className="field-label">Trabajos a Realizar:</span>
+              <div className="field-value"></div>
+            </div>
+            <div className="text-area" style="min-height: 45px;">{recibo.problema}</div>
+
+            {/* Observaciones */}
+            <div className="field">
+              <span className="field-label">Observaciones:</span>
+              <div className="field-value"></div>
+            </div>
+            <div className="text-area" style="min-height: 35px;">{recibo.observaciones}</div>
+
+            {/* Footer */}
+            <div className="footer">
+              <div className="footer-box">
+                <div className="footer-label">TOTAL A PAGAR</div>
+                <div className="footer-value"></div>
+              </div>
+              <div className="footer-box">
+                <div className="footer-label">Recibido por:</div>
+                <div className="footer-value">{recibo.recibidoPor}</div>
+              </div>
+            </div>
+
+            {/* Disclaimer */}
+            <div className="disclaimer">
+              <div><strong>Nota:</strong> La empresa no se hace responsable por equipos con mas de 45 días</div>
+              <div>sin reclamar desde la fecha de ingreso.</div>
+              <div><strong>PARA RECLAMO DE SU ARTÍCULO PRESENTAR FACTURA CORRESPONDIENTE</strong></div>
+            </div>
+          </div>
         </div>
       </div>
     </form>
