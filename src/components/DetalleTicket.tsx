@@ -729,30 +729,30 @@ export default function DetalleTicket({ ticket, onCerrar, onActualizado }: Detal
                 </div>
 
                 {/* Tipo de equipo */}
-                <div className="row" style="margin: 3px 0;">
-                  <div className="field-inline">
-                    <span className="field-label">Computadora</span>
-                    <span className="checkbox ${recibo.tipoEquipo.includes('Computadora') || recibo.tipoEquipo.includes('PC') || recibo.tipoEquipo.includes('Laptop') ? 'checked' : ''}"></span>
+                <div style="display: flex; gap: 8px; margin: 3px 0;">
+                  <div style="display: inline-flex; align-items: center; margin-right: 12px; flex: 1;">
+                    <span style="font-weight: bold; margin-right: 4px; white-space: nowrap;">Computadora</span>
+                    <span style="width: 12px; height: 12px; border: 1.5px solid #000; display: inline-block; position: relative;" class="${recibo.tipoEquipo.includes('Computadora') || recibo.tipoEquipo.includes('PC') || recibo.tipoEquipo.includes('Laptop') ? 'checked' : ''}"></span>
                   </div>
-                  <div className="field-inline">
-                    <span className="field-label">Impresora</span>
-                    <span className="checkbox ${recibo.tipoEquipo.includes('Impresora') ? 'checked' : ''}"></span>
+                  <div style="display: inline-flex; align-items: center; margin-right: 12px; flex: 1;">
+                    <span style="font-weight: bold; margin-right: 4px; white-space: nowrap;">Impresora</span>
+                    <span style="width: 12px; height: 12px; border: 1.5px solid #000; display: inline-block; position: relative;" class="${recibo.tipoEquipo.includes('Impresora') ? 'checked' : ''}"></span>
                   </div>
-                  <div className="field-inline">
-                    <span className="field-label">Otro</span>
-                    <span className="checkbox ${!recibo.tipoEquipo.includes('Computadora') && !recibo.tipoEquipo.includes('PC') && !recibo.tipoEquipo.includes('Laptop') && !recibo.tipoEquipo.includes('Impresora') ? 'checked' : ''}"></span>
+                  <div style="display: inline-flex; align-items: center; margin-right: 12px; flex: 1;">
+                    <span style="font-weight: bold; margin-right: 4px; white-space: nowrap;">Otro</span>
+                    <span style="width: 12px; height: 12px; border: 1.5px solid #000; display: inline-block; position: relative;" class="${!recibo.tipoEquipo.includes('Computadora') && !recibo.tipoEquipo.includes('PC') && !recibo.tipoEquipo.includes('Laptop') && !recibo.tipoEquipo.includes('Impresora') ? 'checked' : ''}"></span>
                   </div>
                 </div>
 
                 {/* Marca y Modelo */}
-                <div className="row">
-                  <div className="field" style="flex: 1;">
-                    <span className="field-label">Marca:</span>
-                    <div className="field-value">{recibo.marca}</div>
+                <div style="display: flex; gap: 8px;">
+                  <div style="display: flex; align-items: center; margin: 2px 0; min-height: 16px; flex: 1;">
+                    <span style="font-weight: bold; margin-right: 4px; white-space: nowrap;">Marca:</span>
+                    <div style="flex: 1; border-bottom: 1px solid #000; padding-left: 4px; min-height: 14px;">{recibo.marca}</div>
                   </div>
-                  <div className="field" style="flex: 1;">
-                    <span className="field-label">Modelo:</span>
-                    <div className="field-value">{recibo.modelo}</div>
+                  <div style="display: flex; align-items: center; margin: 2px 0; min-height: 16px; flex: 1;">
+                    <span style="font-weight: bold; margin-right: 4px; white-space: nowrap;">Modelo:</span>
+                    <div style="flex: 1; border-bottom: 1px solid #000; padding-left: 4px; min-height: 14px;">{recibo.modelo}</div>
                   </div>
                 </div>
 
@@ -791,18 +791,18 @@ export default function DetalleTicket({ ticket, onCerrar, onActualizado }: Detal
                 </div>
 
                 {/* Trabajos a Realizar */}
-                <div className="field">
-                  <span className="field-label">Trabajos a Realizar:</span>
-                  <div className="field-value"></div>
+                <div style="display: flex; align-items: center; margin: 2px 0; min-height: 16px;">
+                  <span style="font-weight: bold; margin-right: 4px; white-space: nowrap;">Trabajos a Realizar:</span>
+                  <div style="flex: 1; border-bottom: 1px solid #000; padding-left: 4px; min-height: 14px;"></div>
                 </div>
-                <div className="text-area" style="min-height: 45px;">{recibo.problema}</div>
+                <div style="border: 1.5px solid #000; padding: 4px; min-height: 45px; margin: 2px 0; white-space: pre-wrap; word-wrap: break-word;">{recibo.problema}</div>
 
                 {/* Observaciones */}
-                <div className="field">
-                  <span className="field-label">Observaciones:</span>
-                  <div className="field-value"></div>
+                <div style="display: flex; align-items: center; margin: 2px 0; min-height: 16px;">
+                  <span style="font-weight: bold; margin-right: 4px; white-space: nowrap;">Observaciones:</span>
+                  <div style="flex: 1; border-bottom: 1px solid #000; padding-left: 4px; min-height: 14px;"></div>
                 </div>
-                <div className="text-area" style="min-height: 35px;">{recibo.trabajos}</div>
+                <div style="border: 1.5px solid #000; padding: 4px; min-height: 35px; margin: 2px 0; white-space: pre-wrap; word-wrap: break-word;">{recibo.trabajos}</div>
 
                 {/* Footer */}
                 <div className="footer">
